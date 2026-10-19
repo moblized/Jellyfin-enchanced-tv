@@ -1,0 +1,115 @@
+name: Build Jellyfin Enhanced APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-enhanced
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-24.04
+    env:
+      # The signing key never lives in the repository. It comes from the KEYSTORE_BASE64 / KEYSTORE_PASSWORD secrets
+      # when set, otherwise a key is generated once and kept in the Actions cache so builds can update each other.
+      KEYSTORE_FILE: ${{ github.workspace }}/../signing/enhanced-release.keystore
+      SIGNING_KEY_ALIAS: enhanced
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
+
+      - name: Restore signing key
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../signing
+          key: enhanced-signing-key-v1
+
+      - name: Prepare signing key
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_SECRET_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p "$(dirname "$KEYSTORE_FILE")"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+            PASSWORD="$KEYSTORE_SECRET_PASSWORD"
+          else
+            PASSWORD_FILE="$(dirname "$KEYSTORE_FILE")/password"
+            if [ ! -f "$KEYSTORE_FILE" ] || [ ! -f "$PASSWORD_FILE" ]; then
+              echo "No cached signing key, generating a new one"
+              openssl rand -hex 24 > "$PASSWORD_FILE"
+              keytool -genkeypair -keystore "$KEYSTORE_FILE" -storetype PKCS12 -alias "$SIGNING_KEY_ALIAS" \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -storepass "$(cat "$PASSWORD_FILE")" -keypass "$(cat "$PASSWORD_FILE")" \
+                -dname "CN=Jellyfin Enhanced for Android TV"
+            fi
+            PASSWORD="$(cat "$PASSWORD_FILE")"
+          fi
+          echo "::add-mask::$PASSWORD"
+          echo "KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+          echo "SIGNING_KEY_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Assemble release APK
+        shell: bash
+        run: |
+          export JELLYFIN_VERSION="0.19.10-enhanced.${{ github.run_number }}"
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee build.log
+
+      - name: Report build errors
+        if: failure()
+        shell: bash
+        run: |
+          # Surface compiler errors as annotations so they are readable without downloading logs
+          grep -E '^e: |error:|What went wrong|> Task .* FAILED|Execution failed' build.log \
+            | sed -E 's#file:///home/runner/work/[^/]+/[^/]+/##' \
+            | head -80 > errors.txt || true
+          if [ ! -s errors.txt ]; then tail -40 build.log > errors.txt; fi
+          split -l 8 errors.txt chunk_
+          for f in $(ls chunk_* | head -10); do
+            msg=$(sed -e 's/%/%25/g' "$f" | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build error::${msg}"
+          done
+
+      - name: Collect APK
+        shell: bash
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)
+          cp "$APK" jellyfin-enhanced-tv.apk
+          ls -la jellyfin-enhanced-tv.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: jellyfin-enhanced-tv
+          retention-days: 30
+          path: jellyfin-enhanced-tv.apk
+
+      - name: Publish to the "latest" release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest jellyfin-enhanced-tv.apk \
+            --target "$GITHUB_SHA" \
+            --title "Jellyfin Enhanced for Android TV (build ${{ github.run_number }})" \
+            --notes "Built from ${GITHUB_SHA::7}. Install: download jellyfin-enhanced-tv.apk below, or on the TV open https://github.com/${{ github.repository }}/releases/latest/download/jellyfin-enhanced-tv.apk in the Downloader app."

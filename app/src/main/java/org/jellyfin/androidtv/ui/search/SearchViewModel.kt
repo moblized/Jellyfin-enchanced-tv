@@ -9,13 +9,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import org.jellyfin.androidtv.R
+import org.jellyfin.androidtv.enhanced.JellyfinEnhancedRepository
+import org.jellyfin.androidtv.enhanced.SeerrItem
+import org.jellyfin.androidtv.preference.UserPreferences
 import org.jellyfin.sdk.model.api.BaseItemKind
+import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 class SearchViewModel(
-	private val searchRepository: SearchRepository
+	private val searchRepository: SearchRepository,
+	private val enhancedRepository: JellyfinEnhancedRepository,
+	private val userPreferences: UserPreferences,
 ) : ViewModel() {
 	companion object {
 		private val debounceDuration = 600.milliseconds
@@ -45,6 +52,35 @@ class SearchViewModel(
 	private val _searchResultsFlow = MutableStateFlow<Collection<SearchResultGroup>>(emptyList())
 	val searchResultsFlow = _searchResultsFlow.asStateFlow()
 
+	// Jellyfin Enhanced: Seerr results load in their own job so a slow Seerr never delays library results
+	private var seerrJob: Job? = null
+	private val _seerrResultsFlow = MutableStateFlow<List<SeerrItem>>(emptyList())
+	val seerrResultsFlow = _seerrResultsFlow.asStateFlow()
+
+	init {
+		if (userPreferences[UserPreferences.enhancedSeerrSearch]) enhancedRepository.prefetch()
+	}
+
+	private fun searchSeerr(query: String) {
+		seerrJob?.cancel()
+
+		if (query.isBlank() || !userPreferences[UserPreferences.enhancedSeerrSearch]) {
+			_seerrResultsFlow.value = emptyList()
+			return
+		}
+
+		seerrJob = viewModelScope.launch {
+			_seerrResultsFlow.value = try {
+				enhancedRepository.seerrSearch(query)
+			} catch (err: CancellationException) {
+				throw err
+			} catch (err: Exception) {
+				Timber.w(err, "Seerr search failed")
+				emptyList()
+			}
+		}
+	}
+
 	fun searchImmediately(query: String) = searchDebounced(query, 0.milliseconds)
 
 	fun searchDebounced(query: String, debounce: Duration = debounceDuration): Boolean {
@@ -56,11 +92,14 @@ class SearchViewModel(
 
 		if (trimmed.isBlank()) {
 			_searchResultsFlow.value = emptyList()
+			searchSeerr("")
 			return true
 		}
 
 		searchJob = viewModelScope.launch {
 			delay(debounce)
+
+			searchSeerr(trimmed)
 
 			_searchResultsFlow.value = groups.map { (stringRes, itemKinds) ->
 				async {

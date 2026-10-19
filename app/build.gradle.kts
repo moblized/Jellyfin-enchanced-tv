@@ -55,13 +55,16 @@ android {
 		release {
 			isMinifyEnabled = false
 
+			// Jellyfin Enhanced build: own application id so it installs next to the official app
+			applicationIdSuffix = ".enhanced"
+
 			// Set package names used in various XML files
-			resValue("string", "app_id", namespace!!)
-			resValue("string", "app_search_suggest_authority", "${namespace}.content")
-			resValue("string", "app_search_suggest_intent_data", "content://${namespace}.content/intent")
+			resValue("string", "app_id", namespace + applicationIdSuffix)
+			resValue("string", "app_search_suggest_authority", "${namespace + applicationIdSuffix}.content")
+			resValue("string", "app_search_suggest_intent_data", "content://${namespace + applicationIdSuffix}.content/intent")
 
 			// Set flavored application name
-			resValue("string", "app_name", "@string/app_name_release")
+			resValue("string", "app_name", "Jellyfin Enhanced")
 
 			buildConfigField("boolean", "DEVELOPMENT", "false")
 

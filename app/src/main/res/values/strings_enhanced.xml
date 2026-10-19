@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- General -->
+	<string name="je_name" translatable="false">Jellyfin Enhanced</string>
+	<string name="je_details_button">Enhanced</string>
+	<string name="je_not_available">Jellyfin Enhanced isn\'t installed on this server</string>
+
+	<!-- Seerr -->
+	<string name="je_seerr_row">Request with Seerr</string>
+	<string name="je_type_movie">Movie</string>
+	<string name="je_type_series">Series</string>
+	<string name="je_status_available">Available</string>
+	<string name="je_status_partial">Partly available</string>
+	<string name="je_status_requested">Requested</string>
+	<string name="je_status_processing">Downloading</string>
+	<string name="je_status_blocklisted">Blocklisted</string>
+	<string name="je_request">Request</string>
+	<string name="je_request_4k">Request in 4K</string>
+	<string name="je_request_seasons">Request seasons: %1$s</string>
+	<string name="je_request_sent">Requested %1$s</string>
+	<string name="je_request_pick_season">Pick at least one season</string>
+	<string name="je_request_nothing_left">Every season is already requested or available</string>
+	<string name="je_already_available">Already in your library</string>
+	<string name="je_already_requested">Already requested</string>
+	<string name="je_season_episodes">%1$s (%2$d episodes)</string>
+
+	<!-- Errors -->
+	<string name="je_error_unlinked">Your Jellyfin account isn\'t linked to Seerr yet</string>
+	<string name="je_error_unreachable">Seerr can\'t be reached right now</string>
+	<string name="je_error_not_configured">This isn\'t set up in Jellyfin Enhanced on the server</string>
+	<string name="je_error_permission">Your account isn\'t allowed to do that</string>
+	<string name="je_error_parental">Blocked by your parental controls</string>
+	<string name="je_error_network">Can\'t reach the server</string>
+	<string name="je_error_generic">Something went wrong (%1$s)</string>
+
+	<!-- Bookmarks -->
+	<string name="je_bookmarks">Bookmarks</string>
+	<string name="je_bookmark_add">Add bookmark at %1$s</string>
+	<string name="je_bookmark_added">Bookmarked at %1$s</string>
+	<string name="je_bookmark_jump">Jump to %1$s</string>
+	<string name="je_bookmarks_none">No bookmarks yet. Add one from the player.</string>
+	<string name="je_bookmark_play">Play from here</string>
+	<string name="je_bookmark_delete">Delete bookmark</string>
+	<string name="je_bookmark_deleted">Bookmark deleted</string>
+
+	<!-- Reviews -->
+	<string name="je_reviews">Reviews</string>
+	<string name="je_reviews_none">No reviews yet</string>
+	<string name="je_reviews_tmdb">TMDB</string>
+	<string name="je_reviews_server">On this server</string>
+	<string name="je_rate">Rate it</string>
+	<string name="je_rate_current">Rate it (yours: %1$s)</string>
+	<string name="je_rate_remove">Remove my rating and review</string>
+	<string name="je_review_write">Write a review…</string>
+	<string name="je_review_hint">What did you think?</string>
+	<string name="je_review_saved">Saved</string>
+	<string name="je_review_removed">Removed</string>
+	<string name="je_review_unsupported">Reviews need a TMDB id on this item</string>
+
+	<!-- Settings -->
+	<string name="je_pref_description">Seerr requests, bookmarks, reviews and poster tags</string>
+	<string name="je_pref_status">Plugin</string>
+	<string name="je_pref_status_found">Version %1$s found on this server</string>
+	<string name="je_pref_category_app">In this app</string>
+	<string name="je_pref_seerr_search">Show Seerr results in search</string>
+	<string name="je_pref_seerr_search_description">Search and request movies and shows you don\'t have yet</string>
+	<string name="je_pref_player_bookmarks">Bookmark button in the player</string>
+	<string name="je_pref_player_bookmarks_description">Save timestamps and jump back to them later</string>
+	<string name="je_pref_details_button">Enhanced button on details screens</string>
+	<string name="je_pref_details_button_description">Bookmarks, reviews and your rating</string>
+	<string name="je_pref_category_tags">Poster tags (drawn by the server)</string>
+	<string name="je_pref_tags_native">Show poster tags in this app</string>
+	<string name="je_pref_tags_quality">Quality tags (4K, HDR, codec)</string>
+	<string name="je_pref_tags_genre">Genre tags</string>
+	<string name="je_pref_tags_language">Language tags</string>
+	<string name="je_pref_tags_rating">Rating tags</string>
+	<string name="je_pref_tags_age">Age rating tags</string>
+	<string name="je_pref_tags_note">Changes reach posters within a couple of minutes. Reopen a library to refresh it.</string>
+	<string name="je_pref_tags_master_off">Ask your server admin to turn on \"Enable Native Poster Tags\" in Jellyfin Enhanced</string>
+</resources>

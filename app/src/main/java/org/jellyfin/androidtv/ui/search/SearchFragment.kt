@@ -71,6 +71,13 @@ class SearchFragment : Fragment() {
 				}
 			}
 
+			// Jellyfin Enhanced: Seerr results arrive separately from library results
+			LaunchedEffect(Unit) {
+				viewModel.seerrResultsFlow.collect { results ->
+					searchFragmentDelegate.showSeerrResults(results)
+				}
+			}
+
 			Column {
 				MainToolbar(MainToolbarActiveButton.Search)
 

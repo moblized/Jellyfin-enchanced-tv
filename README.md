@@ -1,89 +1,49 @@
-<h1 align="center">Jellyfin Android TV</h1>
-<h3 align="center">Part of the <a href="https://jellyfin.org">Jellyfin Project</a></h3>
+# Jellyfin Enhanced for Android TV
 
----
+A fork of the official [Jellyfin for Android TV](https://github.com/jellyfin/jellyfin-androidtv) app (v0.19.10) with
+the features of the [Jellyfin Enhanced](https://github.com/n00bcodr/Jellyfin-Enhanced) server plugin built in natively.
 
-<p align="center">
-<img alt="Logo banner" src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/banner-logo-solid.svg?sanitize=true"/>
-<br/><br/>
-<a href="https://github.com/jellyfin/jellyfin-androidtv">
-<img alt="GPL 2.0 License" src="https://img.shields.io/github/license/jellyfin/jellyfin-androidtv.svg"/>
-</a>
-<a href="https://github.com/jellyfin/jellyfin-androidtv/releases">
-<img alt="Current Release" src="https://img.shields.io/github/release/jellyfin/jellyfin-androidtv.svg"/>
-</a>
-<a href="https://translate.jellyfin.org/projects/jellyfin-android/jellyfin-androidtv/">
-<img alt="Translation Status" src="https://translate.jellyfin.org/widgets/jellyfin-android/-/jellyfin-androidtv/svg-badge.svg"/>
-</a>
-<br/>
-<a href="https://opencollective.com/jellyfin">
-<img alt="Donate" src="https://img.shields.io/opencollective/all/jellyfin.svg?label=backers"/>
-</a>
-<a href="https://features.jellyfin.org">
-<img alt="Feature Requests" src="https://img.shields.io/badge/fider-vote%20on%20features-success.svg"/>
-</a>
-<a href="https://matrix.to/#/+jellyfin:matrix.org">
-<img alt="Chat on Matrix" src="https://img.shields.io/matrix/jellyfin:matrix.org.svg?logo=matrix"/>
-</a>
-<a href="https://www.reddit.com/r/jellyfin">
-<img alt="Join our Subreddit" src="https://img.shields.io/badge/reddit-r%2Fjellyfin-%23FF5700.svg"/>
-</a>
-<br/>
-<a href="https://play.google.com/store/apps/details?id=org.jellyfin.androidtv">
-<img width="153" alt="Jellyfin on Google Play" src="https://jellyfin.org/images/store-icons/google-play.png"/>
-</a>
-<a href="https://www.amazon.com/gp/aw/d/B07TX7Z725">
-<img width="153" alt="Jellyfin on Amazon Appstore" src="https://jellyfin.org/images/store-icons/amazon.png"/>
-</a>
-<a href="https://f-droid.org/en/packages/org.jellyfin.androidtv/">
-<img width="153" alt="Jellyfin on F-Droid" src="https://jellyfin.org/images/store-icons/fdroid.png"/>
-</a>
-<br/>
-<a href="https://repo.jellyfin.org/releases/client/androidtv/">Download archive</a>
-</p>
+Jellyfin Enhanced normally works by injecting JavaScript into Jellyfin's web interface. The Android TV app has no web
+interface, so the plugin's features can't run there. Instead of turning the app into a slow web view, this fork
+rebuilds the features as native Android TV screens that talk to the plugin's own server API. Playback, browsing and
+scrolling are untouched stock code.
 
-Jellyfin Android TV is a Jellyfin client for Android TV, Nvidia Shield, and Amazon Fire TV devices.
-We welcome all contributions and pull requests! If you have a larger feature in mind please open an
-issue so we can discuss the implementation before you start. 
+It installs next to the official app (package `org.jellyfin.androidtv.enhanced`, shown as **Jellyfin Enhanced**).
 
-## Translating
+## Features
 
-Translations can be improved very easily from our
-[Weblate](https://translate.jellyfin.org/projects/jellyfin-android/jellyfin-androidtv) instance.
-Look through the following graphic to see if your native language could use some work!
+| Feature | Where | How it works |
+| --- | --- | --- |
+| **Seerr search & request** | Search screen | A "Request with Seerr" row appears below your library results. Pick a movie or show to request it, in 4K too when your server allows it, choosing seasons for series. Requests go through the plugin, so the TV never needs to reach Seerr directly. |
+| **Poster tags** | Every poster | Uses the plugin's *Native Poster Tags*: the server draws quality, genre, language, rating and age tags into the poster images, so the TV does no extra work while scrolling. Toggle tag groups in Settings → Jellyfin Enhanced. |
+| **Bookmarks** | Player and details | A bookmark button in the player saves the current time or jumps to saved ones. The Enhanced button on a details screen lists bookmarks to play from or delete. Synced with the web UI. |
+| **Reviews & rating** | Details | The Enhanced button shows TMDB reviews and reviews from people on your server, and lets you rate (½ to 5 stars) and write your own. |
 
-<a href="https://translate.jellyfin.org/engage/jellyfin-android/">
-<img alt="Detailed Translation Status" src="https://translate.jellyfin.org/widgets/jellyfin-android/-/jellyfin-androidtv/multi-auto.svg"/>
-</a>
+Every feature can be switched off in **Settings → Jellyfin Enhanced**.
 
-## Build Process
+## Server setup
 
-### Dependencies
+1. Install the [Jellyfin Enhanced](https://github.com/n00bcodr/Jellyfin-Enhanced) plugin on your Jellyfin server.
+2. For Seerr: enable the Seerr integration in the plugin and link your Jellyfin user to Seerr.
+3. For poster tags: in the plugin's **Display → Media Tags**, turn on **Enable Native Poster Tags (Experimental)**,
+   then pick tag groups in the app's settings (or the web UI).
+4. For reviews: turn on **Show TMDB Reviews** (needs a TMDB API key) and/or **Enable User Written Reviews**.
 
-- Android Studio
+## Install
 
-### Build
+Every push to `main` builds a signed APK on GitHub Actions and publishes it as the
+[latest release](../../releases/latest).
 
-1. Clone or download this repository
+On the TV, the easiest route is the *Downloader* app: open
+`https://github.com/moblized/jellyfin-enchanced-tv/releases/latest/download/jellyfin-enhanced-tv.apk`.
 
-   ```sh
-   git clone https://github.com/jellyfin/jellyfin-androidtv.git
-   cd jellyfin-androidtv
-   ```
+New builds install over the previous one. The signing key is generated on the first build and kept in this repository's
+private Actions cache (never committed). If that cache is ever cleared, uninstall once before installing the next build.
+To use your own key instead, add `KEYSTORE_BASE64` and `KEYSTORE_PASSWORD` repository secrets (key alias `enhanced`).
 
-2. Open the project in Android Studio and run it from there or build an APK directly through Gradle:
+## Credits
 
-   ```sh
-   ./gradlew assembleDebug
-   ```
-   
-   Add the Android SDK to your PATH environment variable or create the ANDROID_SDK_ROOT variable for
-   this to work.
+- [Jellyfin for Android TV](https://github.com/jellyfin/jellyfin-androidtv), GPL-2.0
+- [Jellyfin Enhanced](https://github.com/n00bcodr/Jellyfin-Enhanced) by n00bcodr
 
-### Deploy to device/emulator
-
-   ```sh
-   ./gradlew installDebug
-   ```
-
-*You can also replace the "Debug" with "Release" to get an optimized release binary.*
+Not affiliated with the Jellyfin project.

@@ -756,6 +756,7 @@ public class FullDetailsFragment extends Fragment implements RecordingIndicatorV
     TextUnderButton moreButton;
     TextUnderButton playButton = null;
     TextUnderButton trailerButton = null;
+    TextUnderButton enhancedButton = null;
 
     private void addButtons(int buttonSize) {
         BaseItemDto baseItem = mBaseItem;
@@ -1054,6 +1055,17 @@ public class FullDetailsFragment extends Fragment implements RecordingIndicatorV
 
         }
 
+        // Jellyfin Enhanced: bookmarks, reviews and rating
+        if (EnhancedDetailsKt.shouldShowEnhancedButton(this)) {
+            enhancedButton = TextUnderButton.create(requireContext(), R.drawable.ic_enhanced, buttonSize, 0, getString(R.string.je_details_button), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    EnhancedDetailsKt.showEnhancedMenu(FullDetailsFragment.this, v);
+                }
+            });
+            mDetailsOverviewRow.addAction(enhancedButton);
+        }
+
         //Now, create a more button to show if needed
         moreButton = TextUnderButton.create(requireContext(), R.drawable.ic_more, buttonSize, 0, getString(R.string.lbl_other_options), new View.OnClickListener() {
             @Override
@@ -1126,13 +1138,18 @@ public class FullDetailsFragment extends Fragment implements RecordingIndicatorV
         if (shuffleButton != null) actionsList.add(shuffleButton);
         if (favButton != null) actionsList.add(favButton);
         if (goToSeriesButton != null) actionsList.add(goToSeriesButton);
+        // Jellyfin Enhanced button goes into the "more" menu first when space runs out
+        if (enhancedButton != null) actionsList.add(enhancedButton);
 
         // reverse the list so the less important actions are hidden first
         Collections.reverse(actionsList);
 
+        // One extra slot for the Jellyfin Enhanced button so it doesn't push stock buttons into the "more" menu
+        int maxVisibleOptions = enhancedButton != null ? 6 : 5;
+
         collapsedOptions = 0;
         for (TextUnderButton action : actionsList) {
-            if (visibleOptions - (ViewKt.isVisible(action) ? 1 : 0) + (!ViewKt.isVisible(moreButton) && collapsedOptions > 0 ? 1 : 0) < 5) {
+            if (visibleOptions - (ViewKt.isVisible(action) ? 1 : 0) + (!ViewKt.isVisible(moreButton) && collapsedOptions > 0 ? 1 : 0) < maxVisibleOptions) {
                 if (!ViewKt.isVisible(action)) {
                     action.setVisibility(View.VISIBLE);
                     visibleOptions++;

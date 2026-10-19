@@ -23,10 +23,13 @@ import androidx.leanback.widget.PlaybackTransportRowView;
 import androidx.leanback.widget.RowPresenter;
 
 import org.jellyfin.androidtv.R;
+import org.jellyfin.androidtv.enhanced.JellyfinEnhancedRepository;
+import org.jellyfin.androidtv.enhanced.JellyfinEnhancedStatus;
 import org.jellyfin.androidtv.preference.UserPreferences;
 import org.jellyfin.androidtv.preference.constant.ClockBehavior;
 import org.jellyfin.androidtv.ui.playback.PlaybackController;
 import org.jellyfin.androidtv.ui.playback.overlay.action.AndroidAction;
+import org.jellyfin.androidtv.ui.playback.overlay.action.BookmarkAction;
 import org.jellyfin.androidtv.ui.playback.overlay.action.ChannelBarChannelAction;
 import org.jellyfin.androidtv.ui.playback.overlay.action.ChapterAction;
 import org.jellyfin.androidtv.ui.playback.overlay.action.ClosedCaptionsAction;
@@ -63,6 +66,7 @@ public class CustomPlaybackTransportControlGlue extends PlaybackTransportControl
     private PlaybackSpeedAction playbackSpeedAction;
     private ZoomAction zoomAction;
     private ChapterAction chapterAction;
+    private BookmarkAction bookmarkAction;
 
     // TV actions
     private PreviousLiveTvChannelAction previousLiveTvChannelAction;
@@ -114,6 +118,7 @@ public class CustomPlaybackTransportControlGlue extends PlaybackTransportControl
         selectAudioAction.dismissPopup();
         selectQualityAction.dismissPopup();
         zoomAction.dismissPopup();
+        bookmarkAction.dismissPopup();
 
         super.onDetachedFromHost();
     }
@@ -204,6 +209,11 @@ public class CustomPlaybackTransportControlGlue extends PlaybackTransportControl
         zoomAction.setLabels(new String[]{context.getString(R.string.lbl_zoom)});
         chapterAction = new ChapterAction(context, this);
         chapterAction.setLabels(new String[]{context.getString(R.string.lbl_chapters)});
+        bookmarkAction = new BookmarkAction(context, this);
+        bookmarkAction.setLabels(new String[]{context.getString(R.string.je_bookmarks)});
+        if (KoinJavaComponent.<UserPreferences>get(UserPreferences.class).get(UserPreferences.Companion.getEnhancedPlayerBookmarks())) {
+            KoinJavaComponent.<JellyfinEnhancedRepository>get(JellyfinEnhancedRepository.class).prefetch();
+        }
 
         previousLiveTvChannelAction = new PreviousLiveTvChannelAction(context, this);
         previousLiveTvChannelAction.setLabels(new String[]{context.getString(R.string.lbl_prev_item)});
@@ -277,12 +287,25 @@ public class CustomPlaybackTransportControlGlue extends PlaybackTransportControl
             secondaryActionsAdapter.add(chapterAction);
         }
 
+        if (!playerAdapter.isLiveTv() && shouldShowBookmarks()) {
+            secondaryActionsAdapter.add(bookmarkAction);
+        }
+
         if (!playerAdapter.isLiveTv()) {
             secondaryActionsAdapter.add(playbackSpeedAction);
             secondaryActionsAdapter.add(selectQualityAction);
         }
 
         secondaryActionsAdapter.add(zoomAction);
+    }
+
+    private boolean shouldShowBookmarks() {
+        boolean enabled = KoinJavaComponent.<UserPreferences>get(UserPreferences.class).get(UserPreferences.Companion.getEnhancedPlayerBookmarks());
+        if (!enabled) return false;
+
+        // Unknown status (still loading) shows the button, a known missing plugin hides it
+        JellyfinEnhancedStatus status = KoinJavaComponent.<JellyfinEnhancedRepository>get(JellyfinEnhancedRepository.class).getCurrentStatus();
+        return status == null || status.getBookmarksEnabled();
     }
 
     @Override

@@ -99,6 +99,10 @@ fun FullDetailsFragment.showDetailsMenu(
 	if (goToSeriesButton?.isVisible == false) {
 		item(getString(R.string.lbl_goto_series)) { gotoSeries() }
 	}
+
+	if (enhancedButton?.isVisible == false) {
+		item(getString(R.string.je_details_button)) { showEnhancedMenu(view) }
+	}
 }.showIfNotEmpty()
 
 fun FullDetailsFragment.createFakeSeriesTimerBaseItemDto(timer: SeriesTimerInfoDto) = BaseItemDto(

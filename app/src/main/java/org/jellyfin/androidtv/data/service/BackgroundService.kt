@@ -75,6 +75,17 @@ class BackgroundService(
 	}
 
 	/**
+	 * Use an external image (for example a TMDB backdrop of a Seerr result) as background.
+	 */
+	fun setBackgroundUrl(url: String?) {
+		if (url.isNullOrBlank() || !userPreferences[UserPreferences.backdropEnabled])
+			return clearBackgrounds()
+
+		_blurBackground.value = true
+		loadBackgrounds(setOf(url))
+	}
+
+	/**
 	 * Use splashscreen from [server] as background.
 	 */
 	fun setBackground(server: Server) {

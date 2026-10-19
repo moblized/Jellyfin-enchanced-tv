@@ -33,6 +33,13 @@ class UserPreferencesScreen : OptionsFragment() {
 			}
 
 			link {
+				setTitle(R.string.je_name)
+				setContent(R.string.je_pref_description)
+				icon = R.drawable.ic_enhanced
+				withFragment<EnhancedPreferencesScreen>()
+			}
+
+			link {
 				setTitle(R.string.pref_telemetry_category)
 				setContent(R.string.pref_telemetry_description)
 				icon = R.drawable.ic_error

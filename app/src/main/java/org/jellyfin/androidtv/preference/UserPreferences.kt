@@ -252,6 +252,22 @@ class UserPreferences(context: Context) : SharedPreferenceStore(
   		 * Enable PGS subtitle direct-play.
 		 */
 		var pgsDirectPlay = booleanPreference("pgs_enabled", true)
+
+		/* Jellyfin Enhanced */
+		/**
+		 * Show Seerr results (via the Jellyfin Enhanced plugin) in search
+		 */
+		var enhancedSeerrSearch = booleanPreference("enhanced_seerr_search", true)
+
+		/**
+		 * Show the bookmark button in the video player
+		 */
+		var enhancedPlayerBookmarks = booleanPreference("enhanced_player_bookmarks", true)
+
+		/**
+		 * Show the Jellyfin Enhanced button (bookmarks, reviews, rating) on item details
+		 */
+		var enhancedDetailsButton = booleanPreference("enhanced_details_button", true)
 	}
 
 	init {
