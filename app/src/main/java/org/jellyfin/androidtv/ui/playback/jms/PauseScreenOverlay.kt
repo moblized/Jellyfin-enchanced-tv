@@ -162,6 +162,8 @@ class PauseScreenOverlay(
 	private fun show() {
 		val playbackController = controller() ?: return
 		if (!enabled || !paused || !playbackController.isPaused || playbackController.isLiveTv || !canShow()) return
+		// A popup menu (audio, subtitles, speed…) takes window focus: wait until it is closed
+		if (!root.hasWindowFocus()) return schedule()
 
 		val item = playbackController.currentlyPlayingItem ?: return
 		val durationMs = playbackController.duration
