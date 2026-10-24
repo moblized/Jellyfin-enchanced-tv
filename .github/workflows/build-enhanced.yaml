@@ -5,22 +5,38 @@ on:
     branches:
       - main
   workflow_dispatch:
+  # Touch the cached signing key every few days so GitHub never evicts it (unused caches expire after 7 days)
+  schedule:
+    - cron: '23 5 */3 * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: build-enhanced
+  # The keep-alive run must never cancel a build
+  group: build-enhanced-${{ github.event_name == 'schedule' && 'keepalive' || 'build' }}
   cancel-in-progress: true
 
 jobs:
+  keep-signing-key:
+    name: Keep signing key cached
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Restore signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: .signing
+          key: enhanced-signing-key-v2
+
   build:
     name: Build release APK
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     env:
       # The signing key never lives in the repository. It comes from the KEYSTORE_BASE64 / KEYSTORE_PASSWORD secrets
       # when set, otherwise a key is generated once and kept in the Actions cache so builds can update each other.
-      KEYSTORE_FILE: ${{ github.workspace }}/../signing/enhanced-release.keystore
+      KEYSTORE_FILE: ${{ github.workspace }}/.signing/enhanced-release.keystore
       SIGNING_KEY_ALIAS: enhanced
     steps:
       - name: Checkout repository
@@ -36,10 +52,11 @@ jobs:
         uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5.0.0
 
       - name: Restore signing key
-        uses: actions/cache@v4
+        id: signing-cache
+        uses: actions/cache/restore@v4
         with:
-          path: ${{ github.workspace }}/../signing
-          key: enhanced-signing-key-v1
+          path: .signing
+          key: enhanced-signing-key-v2
 
       - name: Prepare signing key
         shell: bash
@@ -66,6 +83,15 @@ jobs:
           echo "::add-mask::$PASSWORD"
           echo "KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
           echo "SIGNING_KEY_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+          # Fingerprint only (not secret), to check that builds share one key
+          keytool -list -keystore "$KEYSTORE_FILE" -storepass "$PASSWORD" -alias "$SIGNING_KEY_ALIAS" | grep -i 'SHA-256' || true
+
+      - name: Save new signing key
+        if: steps.signing-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .signing
+          key: enhanced-signing-key-v2
 
       - name: Assemble release APK
         shell: bash

@@ -7,3 +7,6 @@ local.properties
 .kotlin/
 build/
 captures/
+
+# Release signing key restored by CI (never committed)
+.signing/
