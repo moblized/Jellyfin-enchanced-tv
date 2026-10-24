@@ -29,6 +29,9 @@ import org.jellyfin.androidtv.data.repository.UserViewsRepositoryImpl
 import org.jellyfin.androidtv.data.service.BackgroundService
 import org.jellyfin.androidtv.enhanced.JellyfinEnhancedApi
 import org.jellyfin.androidtv.enhanced.JellyfinEnhancedRepository
+import org.jellyfin.androidtv.enhanced.jms.JmsFusionRepository
+import org.jellyfin.androidtv.ui.home.jms.HomeSliderRepository
+import org.jellyfin.androidtv.ui.home.jms.StudioHubRepository
 import org.jellyfin.androidtv.integration.dream.DreamViewModel
 import org.jellyfin.androidtv.ui.InteractionTrackerViewModel
 import org.jellyfin.androidtv.ui.itemhandling.ItemLauncher
@@ -164,4 +167,9 @@ val appModule = module {
 	// Jellyfin Enhanced
 	single { JellyfinEnhancedApi(get(), get(), get()) }
 	single { JellyfinEnhancedRepository(get(), get()) }
+
+	// JMS Fusion style features
+	single { JmsFusionRepository(get()) }
+	single { HomeSliderRepository(get(), get(), get()) }
+	single { StudioHubRepository(get(), get(), get()) }
 }

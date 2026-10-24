@@ -19,6 +19,21 @@ It installs next to the official app (package `org.jellyfin.androidtv.enhanced`,
 | **Bookmarks** | Player and details | A bookmark button in the player saves the current time or jumps to saved ones. The Enhanced button on a details screen lists bookmarks to play from or delete. Synced with the web UI. |
 | **Reviews & rating** | Details | The Enhanced button shows TMDB reviews and reviews from people on your server, and lets you rate (½ to 5 stars) and write your own. |
 
+### JMS Fusion style features
+
+Native versions of three [JMS Fusion](https://github.com/G-grbz/Jellyfin-MonWUI-Plugin) features. They work without
+the plugin (using its defaults); with JMS Fusion installed they follow the settings an admin published from its
+settings page, plus each user's studio hub order and hidden hubs.
+
+| Feature | Where | How it works |
+| --- | --- | --- |
+| **Home slider** | Top of home | Big rotating banner with backdrop, logo, year, rating, runtime, genres and plot. ◀ ▶ browse, OK opens details, hold OK or press play to start. Uses JMS Fusion's item query, item count, slide duration, manual list, "only unwatched" and "balance movies and series". It only rotates while on screen and preloads the next slide, so it costs nothing while you browse rows below. |
+| **Studio hubs** | Home, below the slider | Studio logo tiles (Marvel, Pixar, Disney+, Netflix…) matched to your library's studios by name and alias, plus any hubs an admin added in JMS Fusion. Logos come from your server's JMS Fusion. Opens the studio's movies and series. |
+| **Pause screen** | Player | After a video has been paused for 5 seconds without input, the controls give way to the title (logo), episode, metadata, plot and progress. Any key brings the controls back; play resumes. Honours JMS Fusion's show plot / metadata / logo / backdrop and minimum video length settings. |
+
+JMS Fusion's JavaScript and the JavaScript Injector plugin can't run here: they modify Jellyfin's web page, and this
+app is native. The JMS Fusion project is archived by its author.
+
 Every feature can be switched off in **Settings → Jellyfin Enhanced**.
 
 ## Server setup
@@ -45,5 +60,6 @@ To use your own key instead, add `KEYSTORE_BASE64` and `KEYSTORE_PASSWORD` repos
 
 - [Jellyfin for Android TV](https://github.com/jellyfin/jellyfin-androidtv), GPL-2.0
 - [Jellyfin Enhanced](https://github.com/n00bcodr/Jellyfin-Enhanced) by n00bcodr
+- [JMS Fusion / Jellyfin MonWUI](https://github.com/G-grbz/Jellyfin-MonWUI-Plugin) by G-grbz, slider concept by BobHasNoSoul
 
 Not affiliated with the Jellyfin project.

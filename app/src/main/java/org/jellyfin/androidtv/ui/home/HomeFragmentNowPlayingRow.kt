@@ -1,5 +1,7 @@
 package org.jellyfin.androidtv.ui.home
 
+import org.jellyfin.androidtv.ui.home.jms.topInsertIndex
+
 import android.content.Context
 import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
@@ -35,7 +37,7 @@ class HomeFragmentNowPlayingRow(
 				AudioQueueBaseRowAdapter(playbackManager, lifecycleScope)
 			)
 			// Add row if it wasn't added already
-			if (!rowsAdapter.contains(row!!)) rowsAdapter.add(0, row!!)
+			if (!rowsAdapter.contains(row!!)) rowsAdapter.add(rowsAdapter.topInsertIndex(), row!!)
 		} else if (row != null) {
 			rowsAdapter.remove(row!!)
 			row = null

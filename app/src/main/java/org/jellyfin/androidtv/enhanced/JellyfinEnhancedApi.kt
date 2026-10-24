@@ -76,13 +76,37 @@ class JellyfinEnhancedApi(
 		path: List<String>,
 		query: Map<String, Any?> = emptyMap(),
 		body: JsonElement? = null,
+	): String = serverText(method, listOf(ROOT) + path, query, body)
+
+	/**
+	 * Absolute URL on the connected server for [segments], or null when no server is connected. Used for plugin
+	 * hosted images (for example JMS Fusion studio logos), which are loaded by the image loader.
+	 */
+	fun serverUrl(vararg segments: String): String? {
+		val baseUrl = api.baseUrl?.toHttpUrlOrNull() ?: return null
+		return baseUrl.newBuilder().apply { segments.forEach { addPathSegment(it) } }.build().toString()
+	}
+
+	/** Request any path on the connected server (not only the Jellyfin Enhanced plugin), returning parsed JSON. */
+	suspend fun serverJson(
+		method: String,
+		segments: List<String>,
+		query: Map<String, Any?> = emptyMap(),
+		body: JsonElement? = null,
+	): JsonElement = parseOrNull(serverText(method, segments, query, body)) ?: JsonNull
+
+	/** Request any path on the connected server (not only the Jellyfin Enhanced plugin), returning the body as text. */
+	suspend fun serverText(
+		method: String,
+		segments: List<String>,
+		query: Map<String, Any?> = emptyMap(),
+		body: JsonElement? = null,
 	): String = withContext(Dispatchers.IO) {
 		val baseUrl = api.baseUrl?.toHttpUrlOrNull()
 			?: throw JellyfinEnhancedException(0, "No server connected")
 
 		val url = baseUrl.newBuilder().apply {
-			addPathSegment(ROOT)
-			path.forEach { segment -> addPathSegment(segment) }
+			segments.forEach { segment -> addPathSegment(segment) }
 			query.forEach { (key, value) -> if (value != null) addQueryParameter(key, value.toString()) }
 		}.build()
 

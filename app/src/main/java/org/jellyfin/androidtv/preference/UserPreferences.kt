@@ -268,6 +268,22 @@ class UserPreferences(context: Context) : SharedPreferenceStore(
 		 * Show the Jellyfin Enhanced button (bookmarks, reviews, rating) on item details
 		 */
 		var enhancedDetailsButton = booleanPreference("enhanced_details_button", true)
+
+		/* JMS Fusion style features */
+		/**
+		 * Show the rotating slider at the top of the home screen
+		 */
+		var jmsHomeSlider = booleanPreference("jms_home_slider", true)
+
+		/**
+		 * Show the studio hubs row on the home screen
+		 */
+		var jmsStudioHubs = booleanPreference("jms_studio_hubs", true)
+
+		/**
+		 * Show the pause screen when a video is paused
+		 */
+		var jmsPauseScreen = booleanPreference("jms_pause_screen", true)
 	}
 
 	init {

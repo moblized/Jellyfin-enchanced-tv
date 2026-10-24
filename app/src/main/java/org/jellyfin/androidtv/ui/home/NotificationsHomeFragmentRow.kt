@@ -1,5 +1,7 @@
 package org.jellyfin.androidtv.ui.home
 
+import org.jellyfin.androidtv.ui.home.jms.topInsertIndex
+
 import android.content.Context
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.OnItemViewClickedListener
@@ -40,7 +42,7 @@ class NotificationsHomeFragmentRow(
 		}
 
 		if (!empty && !rowAdded) {
-			rowsAdapter?.add(0, listRow)
+			rowsAdapter?.let { it.add(it.topInsertIndex(), listRow) }
 			rowAdded = true
 		}
 	}

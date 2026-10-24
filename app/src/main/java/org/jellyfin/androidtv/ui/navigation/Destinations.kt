@@ -10,6 +10,7 @@ import org.jellyfin.androidtv.ui.browsing.ByGenreFragment
 import org.jellyfin.androidtv.ui.browsing.ByLetterFragment
 import org.jellyfin.androidtv.ui.browsing.CollectionFragment
 import org.jellyfin.androidtv.ui.browsing.GenericFolderFragment
+import org.jellyfin.androidtv.ui.browsing.StudioFragment
 import org.jellyfin.androidtv.ui.browsing.SuggestedMoviesFragment
 import org.jellyfin.androidtv.ui.home.HomeFragment
 import org.jellyfin.androidtv.ui.itemdetail.FullDetailsFragment
@@ -58,6 +59,12 @@ object Destinations {
 	// TODO only pass item id instead of complete JSON to browsing destinations
 	fun collectionBrowser(item: BaseItemDto) = fragmentDestination<CollectionFragment>(
 		Extras.Folder to Json.Default.encodeToString(item),
+	)
+
+	// JMS Fusion studio hub: a studio and the other library studios it stands for
+	fun studioBrowser(studio: BaseItemDto, studioIds: List<UUID>) = fragmentDestination<StudioFragment>(
+		Extras.Folder to Json.Default.encodeToString(studio),
+		StudioFragment.EXTRA_STUDIO_IDS to studioIds.joinToString(","),
 	)
 
 	// TODO only pass item id instead of complete JSON to browsing destinations

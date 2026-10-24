@@ -58,7 +58,7 @@
 	<string name="je_review_unsupported">Reviews need a TMDB id on this item</string>
 
 	<!-- Settings -->
-	<string name="je_pref_description">Seerr requests, bookmarks, reviews and poster tags</string>
+	<string name="je_pref_description">Seerr, bookmarks, reviews, poster tags, home slider, studio hubs and pause screen</string>
 	<string name="je_pref_status">Plugin</string>
 	<string name="je_pref_status_found">Version %1$s found on this server</string>
 	<string name="je_pref_category_app">In this app</string>
@@ -77,4 +77,27 @@
 	<string name="je_pref_tags_age">Age rating tags</string>
 	<string name="je_pref_tags_note">Changes reach posters within a couple of minutes. Reopen a library to refresh it.</string>
 	<string name="je_pref_tags_master_off">Ask your server admin to turn on \"Enable Native Poster Tags\" in Jellyfin Enhanced</string>
+
+	<!-- JMS Fusion -->
+	<string name="jms_name" translatable="false">JMS Fusion</string>
+	<string name="jms_slider_hint">◀ ▶ Browse    OK Details    Hold OK or ▶❚❚ Play</string>
+	<string name="jms_studio_hubs">Studios</string>
+	<string name="jms_pause_watching">You\'re watching</string>
+	<string name="jms_pause_paused">❚❚  Paused</string>
+	<string name="jms_pause_progress">%1$s / %2$s  ·  %3$s left</string>
+	<string name="jms_duration_hours_minutes">%1$dh %2$dm</string>
+	<string name="jms_duration_minutes">%1$dm</string>
+	<plurals name="jms_seasons">
+		<item quantity="one">%1$d season</item>
+		<item quantity="other">%1$d seasons</item>
+	</plurals>
+	<string name="jms_pref_category">JMS Fusion style</string>
+	<string name="jms_pref_status_found">JMS Fusion found: its published slider, pause screen and studio hub settings are used</string>
+	<string name="jms_pref_status_missing">JMS Fusion isn\'t installed: these use its default settings</string>
+	<string name="jms_pref_slider">Home slider</string>
+	<string name="jms_pref_slider_description">Large rotating banner at the top of the home screen</string>
+	<string name="jms_pref_studio_hubs">Studio hubs</string>
+	<string name="jms_pref_studio_hubs_description">Row of studio logos (Marvel, Pixar, Netflix…) on the home screen</string>
+	<string name="jms_pref_pause_screen">Pause screen</string>
+	<string name="jms_pref_pause_screen_description">Title, plot and progress after a video has been paused for 5 seconds</string>
 </resources>

@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import androidx.leanback.app.RowsSupportFragment
+import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.ListRow
+import androidx.leanback.widget.OnItemViewClickedListener as LeanbackClickedListener
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
@@ -15,6 +17,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -24,6 +27,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jellyfin.androidtv.auth.repository.UserRepository
 import org.jellyfin.androidtv.constant.CustomMessage
 import org.jellyfin.androidtv.constant.HomeSectionType
@@ -36,6 +40,15 @@ import org.jellyfin.androidtv.data.service.BackgroundService
 import org.jellyfin.androidtv.preference.UserSettingPreferences
 import org.jellyfin.androidtv.ui.browsing.CompositeClickedListener
 import org.jellyfin.androidtv.ui.browsing.CompositeSelectedListener
+import org.jellyfin.androidtv.preference.UserPreferences
+import org.jellyfin.androidtv.ui.home.jms.HomeSliderPresenter
+import org.jellyfin.androidtv.ui.home.jms.HomeSliderRepository
+import org.jellyfin.androidtv.ui.home.jms.HomeSliderRow
+import org.jellyfin.androidtv.ui.home.jms.StudioHubRepository
+import org.jellyfin.androidtv.ui.home.jms.StudioHubsHomeRow
+import org.jellyfin.androidtv.ui.home.jms.topInsertIndex
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 import org.jellyfin.androidtv.ui.itemhandling.BaseRowItem
 import org.jellyfin.androidtv.ui.itemhandling.ItemLauncher
 import org.jellyfin.androidtv.ui.itemhandling.ItemRowAdapter
@@ -57,6 +70,10 @@ import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyListener {
+	private companion object {
+		val EXTRAS_HEAD_START = 1.5.seconds
+	}
+
 	private val api by inject<ApiClient>()
 	private val backgroundService by inject<BackgroundService>()
 	private val playbackManager by inject<PlaybackManager>()
@@ -70,6 +87,9 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 	private val navigationRepository by inject<NavigationRepository>()
 	private val itemLauncher by inject<ItemLauncher>()
 	private val keyProcessor by inject<KeyProcessor>()
+	private val userPreferences by inject<UserPreferences>()
+	private val homeSliderRepository by inject<HomeSliderRepository>()
+	private val studioHubRepository by inject<StudioHubRepository>()
 
 	private val helper by lazy { HomeFragmentHelper(requireContext(), userRepository) }
 
@@ -83,15 +103,29 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 	private val nowPlaying by lazy { HomeFragmentNowPlayingRow(lifecycleScope, playbackManager, mediaManager) }
 	private val liveTVRow by lazy { HomeFragmentLiveTVRow(requireActivity(), userRepository, navigationRepository) }
 
+	// JMS Fusion style rows
+	private var studioHubsRow: StudioHubsHomeRow? = null
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 
-		adapter = MutableObjectAdapter<Row>(PositionableListRowPresenter())
+		adapter = MutableObjectAdapter<Row>(ClassPresenterSelector().apply {
+			addClassPresenter(ListRow::class.java, PositionableListRowPresenter())
+			addClassPresenter(HomeSliderRow::class.java, HomeSliderPresenter())
+		})
 
 		lifecycleScope.launch(Dispatchers.IO) {
 			val currentUser = withTimeout(30.seconds) {
 				userRepository.currentUser.filterNotNull().first()
 			}
+
+			// JMS Fusion style slider and studio hubs load next to the normal sections. A cached slider shows
+			// instantly; a fresh one gets a short head start so it can be placed first without moving focus.
+			val sliderEnabled = userPreferences[UserPreferences.jmsHomeSlider]
+			val sliderCached = if (sliderEnabled) homeSliderRepository.cachedContent() else null
+			// runCatching: a failing extra must never take the normal home rows down with it
+			val sliderDeferred = if (sliderEnabled && sliderCached == null) async { runCatching { homeSliderRepository.load() }.getOrNull() } else null
+			val studioHubsDeferred = if (userPreferences[UserPreferences.jmsStudioHubs]) async { runCatching { studioHubRepository.load() }.getOrNull() } else null
 
 			// Start out with default sections
 			val homesections = userSettingPreferences.activeHomesections
@@ -120,13 +154,27 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 				HomeSectionType.NONE -> Unit
 			}
 
+			// Both extras share one short head start
+			val extrasStart = TimeSource.Monotonic.markNow()
+			val slider = sliderCached ?: withTimeoutOrNull(EXTRAS_HEAD_START) { sliderDeferred?.await() }
+			val studioHubsLeft = (EXTRAS_HEAD_START - extrasStart.elapsedNow()).coerceAtLeast(50.milliseconds)
+			val studioHubs = withTimeoutOrNull(studioHubsLeft) { studioHubsDeferred?.await() }.orEmpty()
+
 			// Add sections to layout
 			withContext(Dispatchers.Main) {
 				val cardPresenter = CardPresenter()
 
 				// Add rows in order
+				if (slider != null && slider.items.isNotEmpty()) {
+					(adapter as MutableObjectAdapter<Row>).add(HomeSliderRow(slider.items, slider.durationMs))
+				}
 				notificationsRow.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
 				nowPlaying.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
+				if (studioHubs.isNotEmpty()) {
+					studioHubsRow = StudioHubsHomeRow(studioHubs).also {
+						it.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
+					}
+				}
 				for (row in rows) row.addToRowsAdapter(requireContext(), cardPresenter, adapter as MutableObjectAdapter<Row>)
 
 				// Wire up Live TV sibling rows so the On Now row removes the buttons row when empty
@@ -141,12 +189,40 @@ class HomeRowsFragment : RowsSupportFragment(), AudioEventListener, View.OnKeyLi
 					}
 				}
 			}
+
+			// Slider that missed the head start: add it on top if the user hasn't moved yet
+			if (slider == null && sliderDeferred != null) {
+				val late = sliderDeferred.await()
+				if (late != null && late.items.isNotEmpty()) withContext(Dispatchers.Main) {
+					@Suppress("UNCHECKED_CAST")
+					val rowsAdapter = adapter as MutableObjectAdapter<Row>
+					if (selectedPosition <= 0 && rowsAdapter.none { it is HomeSliderRow }) {
+						rowsAdapter.add(0, HomeSliderRow(late.items, late.durationMs))
+					}
+				}
+			}
+
+			// Studio hubs that missed it: add them below the slider while focus is still above that spot
+			if (studioHubs.isEmpty() && studioHubsDeferred != null) {
+				val late = studioHubsDeferred.await().orEmpty()
+				if (late.isNotEmpty()) withContext(Dispatchers.Main) {
+					@Suppress("UNCHECKED_CAST")
+					val rowsAdapter = adapter as MutableObjectAdapter<Row>
+					val index = rowsAdapter.topInsertIndex()
+					if (studioHubsRow == null && selectedPosition < index) {
+						studioHubsRow = StudioHubsHomeRow(late).also { it.insertInto(requireContext(), rowsAdapter, index) }
+					}
+				}
+			}
 		}
 
 		onItemViewClickedListener = CompositeClickedListener().apply {
 			registerListener(ItemViewClickedListener())
 			registerListener(liveTVRow::onItemClicked)
 			registerListener(notificationsRow::onItemClicked)
+			registerListener(LeanbackClickedListener { itemViewHolder, item, rowViewHolder, row ->
+				studioHubsRow?.onItemClicked(itemViewHolder, item, rowViewHolder, row)
+			})
 		}
 
 		onItemViewSelectedListener = CompositeSelectedListener().apply {

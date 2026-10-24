@@ -37,6 +37,7 @@ import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
 import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwnerKt;
 
 import org.jellyfin.androidtv.R;
 import org.jellyfin.androidtv.constant.CustomMessage;
@@ -60,6 +61,7 @@ import org.jellyfin.androidtv.ui.livetv.LiveTvGuideFragmentHelperKt;
 import org.jellyfin.androidtv.ui.livetv.TvManager;
 import org.jellyfin.androidtv.ui.navigation.Destinations;
 import org.jellyfin.androidtv.ui.navigation.NavigationRepository;
+import org.jellyfin.androidtv.ui.playback.jms.PauseScreenOverlay;
 import org.jellyfin.androidtv.ui.playback.overlay.LeanbackOverlayFragment;
 import org.jellyfin.androidtv.ui.presentation.CardPresenter;
 import org.jellyfin.androidtv.ui.presentation.ChannelCardPresenter;
@@ -123,6 +125,8 @@ public class CustomPlaybackOverlayFragment extends Fragment implements LiveTvGui
 
     private boolean mFadeEnabled = false;
     private boolean mIsVisible = false;
+    // JMS Fusion style pause screen
+    private PauseScreenOverlay pauseScreen;
     private boolean mPopupPanelVisible = false;
     private boolean navigating = false;
 
@@ -224,12 +228,27 @@ public class CustomPlaybackOverlayFragment extends Fragment implements LiveTvGui
         if (playbackController != null) {
             playbackController.init(new VideoManager(requireActivity(), view, helper), this);
         }
+
+        pauseScreen = new PauseScreenOverlay(
+                binding.getRoot(),
+                LifecycleOwnerKt.getLifecycleScope(getViewLifecycleOwner()),
+                () -> playbackControllerContainer.getValue().getPlaybackController(),
+                () -> !mGuideVisible && !mPopupPanelVisible,
+                () -> {
+                    if (leanbackOverlayFragment != null) leanbackOverlayFragment.hideOverlay();
+                    return kotlin.Unit.INSTANCE;
+                }
+        );
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
 
+        if (pauseScreen != null) {
+            pauseScreen.release();
+            pauseScreen = null;
+        }
         binding = null;
         // To fix race condition in hide timer
         mIsVisible = false;
@@ -390,6 +409,8 @@ public class CustomPlaybackOverlayFragment extends Fragment implements LiveTvGui
     private OnBackPressedCallback backPressedCallback = new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
+            if (pauseScreen != null && pauseScreen.consumeBack()) return;
+
             if (mPopupPanelVisible) {
                 // back should just hide the popup panel
                 hidePopupPanel();
@@ -482,6 +503,9 @@ public class CustomPlaybackOverlayFragment extends Fragment implements LiveTvGui
                     leanbackOverlayFragment.setShouldShowOverlay(false);
                     leanbackOverlayFragment.hideOverlay();
                 }
+
+                // A key press while the pause screen shows only dismisses it (media keys keep working)
+                if (pauseScreen != null && pauseScreen.onUserInteraction(keyCode)) return true;
 
                 if (binding.skipOverlay.getVisible()) {
                     // Hide without doing anything
@@ -1230,10 +1254,12 @@ public class CustomPlaybackOverlayFragment extends Fragment implements LiveTvGui
         } else {
             mHandler.removeCallbacks(mHideTask);
         }
+        if (pauseScreen != null) pauseScreen.onPlaybackStateChanged();
     }
 
     public void setPlayPauseActionState(final int state) {
         leanbackOverlayFragment.updatePlayState();
+        if (pauseScreen != null) pauseScreen.onPlaybackStateChanged();
     }
 
     public void updateDisplay() {
