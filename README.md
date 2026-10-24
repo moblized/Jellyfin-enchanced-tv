@@ -53,7 +53,9 @@ On the TV, the easiest route is the *Downloader* app: open
 `https://github.com/moblized/jellyfin-enchanced-tv/releases/latest/download/jellyfin-enhanced-tv.apk`.
 
 New builds install over the previous one. The signing key is generated on the first build and kept in this repository's
-private Actions cache (never committed). If that cache is ever cleared, uninstall once before installing the next build.
+private Actions cache (never committed); a scheduled job refreshes it every few days so GitHub doesn't expire it. If
+that cache is ever cleared, Android will refuse the update ("App not installed"): uninstall once, then install the new
+build. Builds from before October 24, 2026 used a different key, so uninstall those once too.
 To use your own key instead, add `KEYSTORE_BASE64` and `KEYSTORE_PASSWORD` repository secrets (key alias `enhanced`).
 
 ## Credits
